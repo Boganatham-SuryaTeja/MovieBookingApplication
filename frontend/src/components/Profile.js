@@ -27,10 +27,10 @@ const Profile = () => {
       const docRef = doc(db, 'users', userUid);
       const docSnap = await getDoc(docRef);
       const userData = docSnap.data();
-      const rewardPoints = userData?userData.rewardPoints: 0;    
+      const rewardPoints = userData?.rewardPoints || 0;    
       const isAdmin = userData?.isAdmin || false;
 
-      setRewardPoints(docSnap.data().rewardPoints);
+      setRewardPoints(docSnap.data()?.rewardPoints || 0);
 
       dispatch(
         addUser({
