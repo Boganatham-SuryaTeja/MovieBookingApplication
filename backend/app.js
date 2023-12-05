@@ -1,4 +1,6 @@
 const express = require('express');
+const cors = require('cors');
+
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
@@ -9,6 +11,8 @@ const premiumRoute = require('./api/routes/premium');
 const bookingRoute = require('./api/routes/booking');
 
 const app = express();
+
+app.use(cors());
 
 mongoose.connect(
   `mongodb+srv://admin:${process.env.MONGO_DB_PASSWORD}@cluster0.bdygguu.mongodb.net/`

@@ -27,7 +27,7 @@ const Profile = () => {
       const docRef = doc(db, 'users', userUid);
       const docSnap = await getDoc(docRef);
       const userData = docSnap.data();
-      const rewardPoints = userData.rewardPoints;    
+      const rewardPoints = userData?userData.rewardPoints: 0;    
       const isAdmin = userData?.isAdmin || false;
 
       setRewardPoints(docSnap.data().rewardPoints);

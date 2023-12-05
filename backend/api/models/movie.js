@@ -11,6 +11,7 @@ const movieSchema = new mongoose.Schema({
   language: String,
   location: String,
   release_date: Date,
+  bookedSeats: [{ type: String }],
 });
 
 module.exports = mongoose.model('Movie', movieSchema);

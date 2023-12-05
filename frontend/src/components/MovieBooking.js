@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Switch } from '@headlessui/react';
 import { useSelector } from 'react-redux';
 
@@ -28,6 +28,22 @@ const MovieBooking = (props) => {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [bookedSeats, setBookedSeats] = useState([]);
 
+  const [seats, setSeats] = useState(props.movie.bookedSeats || []);
+
+  const [newBookedSeats, setNewBookedSeats] = useState([]);
+  
+  useEffect(()=>{
+    axios.get(`/movie/getmovie/${props.movie._id}`)
+    .then((res)=>{
+      const tempMovie = res.data;
+      setSeats([...tempMovie.bookedSeats]);
+    })
+    .catch((error) => {
+      console.log("Cannot fetch movie " + error.message);
+    });
+  }, [])
+
+
   const toggleSeat = (rowIndex, colIndex) => {
     const newSeatData = [...seatData];
     const isSelected = newSeatData[rowIndex][colIndex] === props.userId;
@@ -54,7 +70,7 @@ const MovieBooking = (props) => {
   const handleToggleReward = () => {
     setEnabled(!enabled);
   };
-  
+
   const showMessage = () => {
     setTimeout(() => {
       setMessage(false);
@@ -63,6 +79,11 @@ const MovieBooking = (props) => {
 
   const handleBooking = async (ev) => {
     ev.preventDefault();
+    const updatedBookedSeats = selectedSeats.map((seat) => `${seat.row}-${seat.col}`);
+    
+    const x = seats.concat(updatedBookedSeats) 
+    setSeats([...x]);
+    setNewBookedSeats([...x]);
 
     const selectedSeatObjects = selectedSeats.map((seat) => {
       const rowLetter = String.fromCharCode(65 + seat.row); // Convert row index to letter
@@ -72,6 +93,7 @@ const MovieBooking = (props) => {
     });
 
     // Form the booking object with the updated properties
+    
     const bookingInfo = {
       userId: auth.currentUser.uid,
       seat: selectedSeatObjects.join(','),
@@ -83,8 +105,10 @@ const MovieBooking = (props) => {
       end_time: props.movie.end_time,
       screen: props.movie.screen,
       isRefunded: false,
+      bookedSeats: [...newBookedSeats, ...bookedSeats],
     };
 
+    
     console.log(bookingInfo);
     setBookedSeats([...bookedSeats, bookingInfo]);
 
@@ -109,10 +133,27 @@ const MovieBooking = (props) => {
     setSelectedSeats([]);
 
     const additionalData = {
-      rewardPoints: isNaN(rewardPoints) ? parseFloat(ev.currentTarget.getElementsByTagName('input')[0].value)  : rewardPoints + parseFloat(ev.currentTarget.getElementsByTagName('input')[0].value)
+      rewardPoints: isNaN(rewardPoints) ? parseFloat(ev.currentTarget.getElementsByTagName('input')[0].value) : rewardPoints + parseFloat(ev.currentTarget.getElementsByTagName('input')[0].value)
     };
 
     await updateUserProfile(userUid, additionalData);
+
+    const movieData = {
+      _id: props.movie._id,
+      theater: props.movie.theater,
+      title: props.movie.title,
+      start_time: props.movie.start_time,
+      end_time: props.movie.end_time,
+      screen: props.movie.screen,
+      seating_capacity: props.movie.seating_capacity,
+      price: props.movie.price,
+      language: props.movie.language,
+      location: props.movie.location,
+      release_date: props.movie.release_date,
+      bookedSeats: [...x],
+    };
+
+    await axios.post(`/movie/updatemovie`, movieData);
   };
 
   const updateUserProfile = async (uid, additionalData) => {
@@ -141,16 +182,18 @@ const MovieBooking = (props) => {
               {row.map((seat, colIndex) => (
                 <div
                   key={colIndex}
-                  className={`seat m-1 p-2 text-center cursor-pointer ${
-                    seat === props.userId
-                      ? 'bg-green-300 text-white'
+                  className={`seat m-1 p-2 text-center cursor-pointer ${seat === props.userId
+                    ? 'bg-green-300 text-white'
+                    : seats.includes(`${rowIndex}-${colIndex}`)
+                      ? 'disabled:opacity-75 bg-red-500 text-white' // Booked seats in red
                       : 'bg-gray-300'
-                  }`}
-                  onClick={() => toggleSeat(rowIndex, colIndex)}
+                    }`}
+                  onClick={() => {!seats.includes(`${rowIndex}-${colIndex}`) && toggleSeat(rowIndex, colIndex)}}
                 ></div>
               ))}
             </div>
           ))}
+
           <div className='booking-summary mt-4'>
             <h2 className='text-2xl font-semibold'>Booking Summary</h2>
             <p>
@@ -159,39 +202,37 @@ const MovieBooking = (props) => {
             </p>
             <p>
               <span className='text-sm font-semibold'> Service fee: </span> $
-              {user.isPremiumUser ? 0 : selectedSeats.length * 1.5 }
+              {user.isPremiumUser ? 0 : selectedSeats.length * 1.5}
             </p>
             {(user.isPremiumUser && rewardPoints && selectedSeats.length > 0) && <p className='flex items-center'>
-                <Switch
-                  checked={enabled}
-                  onClick={handleToggleReward}
-                  className={`${
-                    enabled ? 'bg-black' : 'bg-gray-200'
+              <Switch
+                checked={enabled}
+                onClick={handleToggleReward}
+                className={`${enabled ? 'bg-black' : 'bg-gray-200'
                   } relative inline-flex h-6 w-11 items-center rounded-full`}
-                >
-                  <span className='sr-only'>Use Reward Points</span>
-                  <span
-                    className={`${
-                      enabled ? 'translate-x-6' : 'translate-x-1'
+              >
+                <span className='sr-only'>Use Reward Points</span>
+                <span
+                  className={`${enabled ? 'translate-x-6' : 'translate-x-1'
                     } inline-block h-4 w-4 transform rounded-full bg-white transition`}
-                  />
-                </Switch>
-                <span className='px-4 text-xs text-slate-600'>
-                  Use Reward Points {rewardPoints}
-                </span>
-              </p>}
+                />
+              </Switch>
+              <span className='px-4 text-xs text-slate-600'>
+                Use Reward Points {rewardPoints}
+              </span>
+            </p>}
             <p>
               <span className='text-sm font-semibold'> Total: </span> $
               {
-  enabled ? (
-    rewardPoints > selectedSeats.length * parseInt(props.movie.price.slice(1)) ? 
-      (rewardPoints - selectedSeats.length * parseInt(props.movie.price.slice(1))) : 
-      (selectedSeats.length * parseInt(props.movie.price.slice(1)) - rewardPoints))
-    : (
-      selectedSeats.length * parseInt(props.movie.price.slice(1)) + 
-      (!user.isPremiumUser && selectedSeats.length * 1.5)
-    )
-}
+                enabled ? (
+                  rewardPoints > selectedSeats.length * parseInt(props.movie.price.slice(1)) ?
+                    (rewardPoints - selectedSeats.length * parseInt(props.movie.price.slice(1))) :
+                    (selectedSeats.length * parseInt(props.movie.price.slice(1)) - rewardPoints))
+                  : (
+                    selectedSeats.length * parseInt(props.movie.price.slice(1)) +
+                    (!user.isPremiumUser && selectedSeats.length * 1.5)
+                  )
+              }
 
             </p>
           </div>
@@ -212,11 +253,11 @@ const MovieBooking = (props) => {
               type='number'
               value={
                 enabled ? (
-                  rewardPoints > selectedSeats.length * parseInt(props.movie.price.slice(1)) ? 
-                    (rewardPoints - selectedSeats.length * parseInt(props.movie.price.slice(1))) : 
+                  rewardPoints > selectedSeats.length * parseInt(props.movie.price.slice(1)) ?
+                    (rewardPoints - selectedSeats.length * parseInt(props.movie.price.slice(1))) :
                     (selectedSeats.length * parseInt(props.movie.price.slice(1)) - rewardPoints))
                   : (
-                    selectedSeats.length * parseInt(props.movie.price.slice(1)) + 
+                    selectedSeats.length * parseInt(props.movie.price.slice(1)) +
                     (!user.isPremiumUser && selectedSeats.length * 1.5)
                   )
               }
