@@ -21,13 +21,13 @@ import UpdateMovie from './UpdateMovie';
 
 function MovieCard({ movie }) {
 
-  const user = useSelector((store) => store.user);
+  const user = useSelector((store) =>  store.user);
   const userId = auth?.currentUser?.uid;
   const [message, setMessage] = useState({});
   const [isBooking, setIsBooking] = useState(false);
   const [isupdateMovie, setIsUpdateMovie] = useState(false);
 
-  const updateMovie = () => {};
+  const updateMovie = () => { };
 
   const showMessage = () => {
     setTimeout(() => {
@@ -72,6 +72,43 @@ function MovieCard({ movie }) {
           message: error.message,
         });
       });
+
+    axios.get(`/movie/getmovie/${movie.movieId}`)
+      .then((res) => {
+        const tempMovie = res.data;
+
+        console.log(movie.seat);
+        const tempArray = movie.seat.split(",");
+        console.log("tempArray");
+        console.log(tempArray);
+        const seats = [];
+        tempArray.forEach(element => {
+          let x = (element.charAt(0).charCodeAt(0) - 65) + '-' + ((element[1]-1));
+          seats.push(x)
+        });
+
+        const result = tempMovie.bookedSeats.filter(itemB => !seats.includes(itemB));
+
+          const movieData = {
+            _id: tempMovie._id,
+            theater: tempMovie.theater,
+            title: tempMovie.title,
+            start_time: tempMovie.start_time,
+            end_time: tempMovie.end_time,
+            screen: tempMovie.screen,
+            seating_capacity: tempMovie.seating_capacity,
+            price: tempMovie.price,
+            language: tempMovie.language,
+            location: tempMovie.location,
+            release_date: tempMovie.release_date,
+            bookedSeats: [...result],
+          };
+
+          axios.post(`/movie/updatemovie`, movieData);
+        console.log(seats);
+      })
+
+
   };
   return (
     <>
@@ -85,13 +122,13 @@ function MovieCard({ movie }) {
                 className='w-5 mr-3 cursor-pointer'
                 alt='Edit'
                 id={movie._id}
-                onClick={()=>{
+                onClick={() => {
                   setIsUpdateMovie(true);
                 }}
               />
               <img
                 src={deleteIcon}
-                className='w-5 cursor-pointer'  
+                className='w-5 cursor-pointer'
                 alt='Delete'
                 id={movie._id}
                 onClick={deleteMovie}

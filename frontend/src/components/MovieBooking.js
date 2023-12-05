@@ -96,6 +96,7 @@ const MovieBooking = (props) => {
     
     const bookingInfo = {
       userId: auth.currentUser.uid,
+      movieId: props.movie._id,
       seat: selectedSeatObjects.join(','),
       title: props.movie.title,
       language: props.movie.language,
@@ -105,7 +106,6 @@ const MovieBooking = (props) => {
       end_time: props.movie.end_time,
       screen: props.movie.screen,
       isRefunded: false,
-      bookedSeats: [...newBookedSeats, ...bookedSeats],
     };
 
     
