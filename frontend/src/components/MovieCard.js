@@ -19,7 +19,7 @@ import MovieBooking from './MovieBooking';
 import Modal from './Modal';
 import UpdateMovie from './UpdateMovie';
 
-function MovieCard({ movie }) {
+function MovieCard({ movie, cb = null }) {
 
   const user = useSelector((store) =>  store.user);
   const userId = auth?.currentUser?.uid;
@@ -65,6 +65,7 @@ function MovieCard({ movie }) {
         });
 
         showMessage();
+        if(cb) cb();
       })
       .catch((error) => {
         setMessage({

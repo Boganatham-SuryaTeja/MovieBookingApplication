@@ -21,13 +21,17 @@ const Bookings = () => {
       });
   }, [userId]);
 
+  const resetBooking = () => {
+    setBookings({});
+  };
+
   return (
     <div>
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
-        {bookings.map(
+        {Object.keys(bookings).length > 0  && bookings.map(
           (booking) =>
             !booking.isRefunded && (
-              <MovieCard key={booking._id} movie={booking} />
+              <MovieCard key={booking._id} movie={booking} cb={resetBooking} />
             )
         )}
       </div>
